@@ -202,6 +202,17 @@
     text-wrap: pretty;
   }
   .answer .call .kit { color: var(--accent); }
+  .answer .call .legs {
+    color: var(--muted);
+    font-weight: 500;
+    font-size: .78em;
+  }
+  .answer .call .legs::before {
+    content: "·";
+    margin: 0 .45em;
+    color: var(--hair-strong);
+  }
+  .answer.past .call .legs { color: var(--muted); }
   .answer .detail {
     font-family: var(--mono);
     font-size: 12px;
@@ -405,7 +416,7 @@ const tok = n => CSS.getPropertyValue(n).trim();
 // Layers you put on walking out of the door, from apparent temperature.
 function layerCall(morningApp) {
   const t = morningApp;
-  if (t >= 23) return { n: 0, kit: "טי־שערט" };
+  if (t >= 23) return { n: 0, kit: "טי־העמד" };
   if (t >= 15) return { n: 1, kit: "סװעטער" };
   if (t >= 7)  return { n: 2, kit: "סװעטער + רעקל" };
   if (t >= 0)  return { n: 3, kit: "װאַרעמער מאַנטל" };
@@ -496,12 +507,19 @@ function slice(hours, date, from, to) {
 
 /* ---------- rendering ---------- */
 
+// Legs get their own call, on the period's warmest hour: you pick trousers or
+// shorts once for the period, and the peak is what decides it.
+const SHORTS_ABOVE = 22;
+function legCall(appMax) {
+  return appMax >= SHORTS_ABOVE ? "הײזקעס" : "הױזן";
+}
+
 // When it is properly wet, the outermost layer becomes the waterproof one —
 // a sweater is the wrong answer on a rainy 18-degree day.
 function withRain(layer, rain) {
   if (rain.word !== "רעגן־מאַנטל") return layer;
   const wet = {
-    "טי־שערט": "טי־שערט + רעגן־מאַנטל",
+    "טי־העמד": "טי־העמד + רעגן־מאַנטל",
     "סװעטער": "רעגן־מאַנטל",
     "סװעטער + רעקל": "סװעטער + רעגן־מאַנטל",
     "װאַרעמער מאַנטל": "װאַרעמער װאַסערדיכטער מאַנטל",
@@ -513,9 +531,10 @@ function withRain(layer, rain) {
 function line(s) {
   if (!s) return null;
   const L = withRain(s.layer, s.rain), R = s.rain;
-  const call = L.n === 0
-    ? `<span class="kit">טי־שערט</span>`
-    : `${num(L.n)} ${L.n === 1 ? "שיכט" : "שיכטן"} &larr; <span class="kit">${L.kit}</span>`;
+  const legs = `<span class="legs">${legCall(s.appMax)}</span>`;
+  const call = (L.n === 0
+    ? `<span class="kit">טי־העמד</span>`
+    : `${num(L.n)} ${L.n === 1 ? "שיכט" : "שיכטן"} &larr; <span class="kit">${L.kit}</span>`) + legs;
   // The raincoat is already named in the verdict; do not say it twice.
   const bring = R.kit && R.word !== "רעגן־מאַנטל" ? ` <span class="bring">${R.kit}</span>` : "";
   return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; ${num(s.pmax + "%")} רעגן, ${num(fmt1(s.mm) + " מ״מ")}${bring}` };
@@ -693,7 +712,7 @@ function renderDays(days, hours, sel, t0) {
     const kit = withRain(a.layer, a.rain);
     return `<div class="day${i === sel ? " sel" : ""}${i < t0 ? " been" : ""}" data-i="${i}" role="button" tabindex="0">
       <span class="dow">${i === t0 ? "הײַנט" : DOW_SHORT[dt.getDay()] + " " + num(dt.getDate())}</span>
-      <span class="verdict">${kit.n === 0 ? "טי־שערט" : num(kit.n) + " &larr; " + kit.kit}</span>
+      <span class="verdict">${kit.n === 0 ? "טי־העמד" : num(kit.n) + " &larr; " + kit.kit}</span>
       <span class="layers">${a.rain.word === "טרוקן" ? "טרוקן" : num(a.pmax + "%") + " " + a.rain.word}</span>
       <span class="range num"><span class="lo">${r0(a.appMin)}&deg;</span> &larr; <span class="hi">${r0(a.appMax)}&deg;</span></span>
     </div>`;

@@ -15,7 +15,7 @@ taken as the coldest hour in the period:
 
 | feels like | verdict |
 |---|---|
-| ≥ 23 °C | טי־שערט (t-shirt) |
+| ≥ 23 °C | טי־העמד (t-shirt) |
 | 15–23 °C | 1 שיכט → סװעטער (sweater) |
 | 7–15 °C | 2 שיכטן → סװעטער + רעקל (sweater + jacket) |
 | 0–7 °C | 3 שיכטן → װאַרעמער מאַנטל (warm coat) |
@@ -23,6 +23,9 @@ taken as the coldest hour in the period:
 
 When the verdict is rain, the outermost layer becomes the waterproof one
 (רעגן־מאַנטל).
+
+Legs are called separately, from the period's *warmest* hour: הײזקעס (shorts)
+at 22 °C and above, otherwise הױזן (trousers). `SHORTS_ABOVE` in `index.html`.
 
 ## Language
 
