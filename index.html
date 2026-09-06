@@ -202,6 +202,9 @@
     text-wrap: pretty;
   }
   .answer .call .kit { color: var(--accent); }
+  /* Emoji ride at text size and keep their own direction run. */
+  .ico { unicode-bidi: isolate; font-size: .9em; }
+  .when .name { unicode-bidi: isolate-override; direction: rtl; }
   .answer .call .legs {
     color: var(--muted);
     font-weight: 500;
@@ -362,7 +365,7 @@
 
   <section class="sec">
     <header>
-      <h3 id="wearhead">װאָס אָנצוטאָן</h3>
+      <h3 id="wearhead">👕 װאָס אָנצוטאָן</h3>
       <span class="note">טעמפּעראַטורן — װי עס פֿילט זיך</span>
     </header>
     <div class="answers" id="answers"></div>
@@ -372,20 +375,20 @@
 
   <section class="sec">
     <header>
-      <h3 id="charthead">שעה נאָך שעה</h3>
+      <h3 id="charthead">📈 שעה נאָך שעה</h3>
       <span class="note">װי עס פֿילט זיך &middot; שאַנס אױף רעגן</span>
     </header>
     <div class="chartbox"><svg class="chart" id="chart" viewBox="0 0 640 226" role="img" aria-label="װי עס פֿילט זיך און דער שאַנס אױף רעגן, שעה נאָך שעה"></svg></div>
   </section>
 
   <section class="sec">
-    <header><h3>כּדאַי צו װיסן</h3></header>
+    <header><h3>💡 כּדאַי צו װיסן</h3></header>
     <dl class="facts" id="facts"></dl>
   </section>
 
   <section class="sec">
     <header>
-      <h3>די קומעדיקע װאָך</h3>
+      <h3>📅 די קומעדיקע װאָך</h3>
       <button class="refresh" id="refresh" type="button">אױפֿפֿרישן</button>
     </header>
     <div class="days" id="days"></div>
@@ -427,11 +430,11 @@ function layerCall(morningApp) {
 function rainCall(pmax, mm, gust) {
   if (mm >= 1.0 || pmax >= 60) {
     return gust >= 40
-      ? { word: "רעגן־מאַנטל", kit: "נעמט אַ רעגן־מאַנטל — צו װינטיק פֿאַר אַ שירעם." }
-      : { word: "רעגן־מאַנטל", kit: "נעמט אַ רעגן־מאַנטל." };
+      ? { word: "רעגן־מאַנטל", kit: "💨 נעמט אַ רעגן־מאַנטל — צו װינטיק פֿאַר אַ שירעם." }
+      : { word: "רעגן־מאַנטל", kit: "🌧️ נעמט אַ רעגן־מאַנטל." };
   }
   if (mm >= 0.2 || pmax >= 30) {
-    return { word: "שירעם", kit: "נעמט מיט אַ שירעם." };
+    return { word: "שירעם", kit: "☔ נעמט מיט אַ שירעם." };
   }
   return { word: "טרוקן", kit: null };
 }
@@ -488,10 +491,10 @@ function summarize(hs) {
 
 // 07-12, 12-16, 16-20, then 20-07 rolling into the following morning.
 const PERIODS = [
-  { name: "אין דער פֿרי", from: 7,  to: 12, label: "07:00-12:00" },
-  { name: "נאָכמיטאָג",    from: 12, to: 16, label: "12:00-16:00" },
-  { name: "אָװנט",        from: 16, to: 20, label: "16:00-20:00" },
-  { name: "בײַ נאַכט",     from: 20, to: 31, label: "20:00-07:00" },
+  { name: "🌅 אין דער פֿרי", from: 7,  to: 12, label: "07:00-12:00" },
+  { name: "☀️ נאָכמיטאָג",    from: 12, to: 16, label: "12:00-16:00" },
+  { name: "🌆 אָװנט",        from: 16, to: 20, label: "16:00-20:00" },
+  { name: "🌙 בײַ נאַכט",     from: 20, to: 31, label: "20:00-07:00" },
 ];
 
 // `to` may run past 24, meaning it carries into the next calendar day.
@@ -507,11 +510,26 @@ function slice(hours, date, from, to) {
 
 /* ---------- rendering ---------- */
 
+// Pictures alongside the words, for a reader who is still slow at them.
+const KIT_ICON = {
+  "טי־העמד": "👕",
+  "סװעטער": "🧶",
+  "סװעטער + רעקל": "🧶🧥",
+  "װאַרעמער מאַנטל": "🧥",
+  "װאַרעמער מאַנטל, הוט און הענטשקעס": "🧥🧢🧤",
+  "רעגן־מאַנטל": "🌧️🧥",
+  "טי־העמד + רעגן־מאַנטל": "👕🌧️",
+  "סװעטער + רעגן־מאַנטל": "🧶🌧️",
+  "װאַרעמער װאַסערדיכטער מאַנטל": "🌧️🧥",
+  "װאַרעמער װאַסערדיכטער מאַנטל, הוט און הענטשקעס": "🌧️🧥🧤",
+};
+const icon = s => `<span class="ico">${s}</span>`;
+
 // Legs get their own call, on the period's warmest hour: you pick trousers or
 // shorts once for the period, and the peak is what decides it.
 const SHORTS_ABOVE = 22;
 function legCall(appMax) {
-  return appMax >= SHORTS_ABOVE ? "הײזקעס" : "הױזן";
+  return appMax >= SHORTS_ABOVE ? "🩳 הײזקעס" : "👖 הױזן";
 }
 
 // When it is properly wet, the outermost layer becomes the waterproof one —
@@ -532,12 +550,13 @@ function line(s) {
   if (!s) return null;
   const L = withRain(s.layer, s.rain), R = s.rain;
   const legs = `<span class="legs">${legCall(s.appMax)}</span>`;
+  const pic = icon(KIT_ICON[L.kit] || "👕");
   const call = (L.n === 0
-    ? `<span class="kit">טי־העמד</span>`
-    : `${num(L.n)} ${L.n === 1 ? "שיכט" : "שיכטן"} &larr; <span class="kit">${L.kit}</span>`) + legs;
+    ? `<span class="kit">${pic} טי־העמד</span>`
+    : `${num(L.n)} ${L.n === 1 ? "שיכט" : "שיכטן"} &larr; <span class="kit">${pic} ${L.kit}</span>`) + legs;
   // The raincoat is already named in the verdict; do not say it twice.
   const bring = R.kit && R.word !== "רעגן־מאַנטל" ? ` <span class="bring">${R.kit}</span>` : "";
-  return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; ${num(s.pmax + "%")} רעגן, ${num(fmt1(s.mm) + " מ״מ")}${bring}` };
+  return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; 🌧️ ${num(s.pmax + "%")} רעגן, ${num(fmt1(s.mm) + " מ״מ")}${bring}` };
 }
 
 // Peak daylight feels-like against the day before — the comparison people
@@ -550,11 +569,11 @@ function renderTrend(today, before, offset) {
   const mag = Math.abs(d);
   if (mag < 1.5) {
     el.className = "trend same";
-    el.innerHTML = `כּמעט אַזױ ${ref}`;
+    el.innerHTML = `😐 כּמעט אַזױ ${ref}`;
     return;
   }
   el.className = "trend " + (d > 0 ? "warmer" : "colder");
-  el.innerHTML = `${num(r0(mag) + "&deg;")} ${d > 0 ? "װאַרעמער" : "קעלטער"} ${ref}`;
+  el.innerHTML = `${d > 0 ? "🔥" : "❄️"} ${num(r0(mag) + "&deg;")} ${d > 0 ? "װאַרעמער" : "קעלטער"} ${ref}`;
 }
 
 function renderAnswers(hours, date, isToday) {
@@ -627,7 +646,7 @@ function renderChart(allHours, day, isToday) {
   s += `<rect x="${L}" y="${barsTop}" width="${innerW}" height="${barsH}" fill="${rainSoft}" opacity="0.5" rx="2"/>`;
 
   if (dayMax < 5) {
-    s += `<text x="${L + innerW / 2}" y="${barsTop + barsH / 2 + 4}" text-anchor="middle" fill="${muted}" font-family="Noto Sans Hebrew, sans-serif" font-size="12">קײן רעגן ניט פֿאָרױסגעזאָגט</text>`;
+    s += `<text x="${L + innerW / 2}" y="${barsTop + barsH / 2 + 4}" text-anchor="middle" fill="${muted}" font-family="Noto Sans Hebrew, sans-serif" font-size="12">קײן רעגן ניט פֿאָרױסגעזאָגט 🌤️</text>`;
   } else {
     for (const pct of [50, 100]) {
       const gy = barsTop + barsH - (pct / 100) * barsH;
@@ -689,12 +708,12 @@ function renderChart(allHours, day, isToday) {
 function renderFacts(day, a) {
   const rise = day.sunrise.slice(11, 16), set = day.sunset.slice(11, 16);
   const items = [
-    ["װי עס פֿילט זיך, 7 אַ זײגער", num(fmt1(a.appMin) + "&deg;"), `לופֿט ${num(fmt1(day.tMin) + "&deg;")} מינימום`],
-    ["װי עס פֿילט זיך, מאַקסימום", num(fmt1(a.appMax) + "&deg;"), `לופֿט ${num(fmt1(day.tMax) + "&deg;")}`],
-    ["רעגן, בײַ טאָג", num(fmt1(a.mm) + "&nbsp;מ״מ"), `${num(a.pmax + "%")} מאַקס שאַנס`],
-    ["שטאַרקע װינטן", num(r0(a.gust)), "קמ״ש מאַקסימום"],
-    ["זונאױפֿגאַנג", num(rise), "&nbsp;"],
-    ["זונונטערגאַנג", num(set), "&nbsp;"],
+    ["🌡️ װי עס פֿילט זיך, 7 אַ זײגער", num(fmt1(a.appMin) + "&deg;"), `לופֿט ${num(fmt1(day.tMin) + "&deg;")} מינימום`],
+    ["🌡️ װי עס פֿילט זיך, מאַקסימום", num(fmt1(a.appMax) + "&deg;"), `לופֿט ${num(fmt1(day.tMax) + "&deg;")}`],
+    ["🌧️ רעגן, בײַ טאָג", num(fmt1(a.mm) + "&nbsp;מ״מ"), `${num(a.pmax + "%")} מאַקס שאַנס`],
+    ["💨 שטאַרקע װינטן", num(r0(a.gust)), "קמ״ש מאַקסימום"],
+    ["🌅 זונאױפֿגאַנג", num(rise), "&nbsp;"],
+    ["🌇 זונונטערגאַנג", num(set), "&nbsp;"],
   ];
   document.getElementById("facts").innerHTML = items.map(([k, v, sub]) =>
     `<div class="fact"><dt>${k}</dt><dd>${v} <small>${sub}</small></dd></div>`).join("");
@@ -712,8 +731,8 @@ function renderDays(days, hours, sel, t0) {
     const kit = withRain(a.layer, a.rain);
     return `<div class="day${i === sel ? " sel" : ""}${i < t0 ? " been" : ""}" data-i="${i}" role="button" tabindex="0">
       <span class="dow">${i === t0 ? "הײַנט" : DOW_SHORT[dt.getDay()] + " " + num(dt.getDate())}</span>
-      <span class="verdict">${kit.n === 0 ? "טי־העמד" : num(kit.n) + " &larr; " + kit.kit}</span>
-      <span class="layers">${a.rain.word === "טרוקן" ? "טרוקן" : num(a.pmax + "%") + " " + a.rain.word}</span>
+      <span class="verdict">${(KIT_ICON[kit.kit] || "👕") + " " + (kit.n === 0 ? "טי־העמד" : kit.kit)}</span>
+      <span class="layers">${a.rain.word === "טרוקן" ? "☀️ טרוקן" : "🌧️ " + num(a.pmax + "%")}</span>
       <span class="range num"><span class="lo">${r0(a.appMin)}&deg;</span> &larr; <span class="hi">${r0(a.appMax)}&deg;</span></span>
     </div>`;
   }).join("");
@@ -737,7 +756,7 @@ function stamp(dateISO, when, live, sel) {
   document.getElementById("stamp").innerHTML =
     `${rel} &middot; פּראָגנאָז באַקומען ${gotWhen}${live ? "" : " &middot; מע פֿרישט אױף&hellip;"}`;
   document.getElementById("wearhead").textContent =
-    sel === 0 ? "װאָס אָנצוטאָן הײַנט" : sel < 0 ? "װאָס מע האָט געדאַרפֿט" : "װאָס אָנצוטאָן";
+    "👕 " + (sel === 0 ? "װאָס אָנצוטאָן הײַנט" : sel < 0 ? "װאָס מע האָט געדאַרפֿט" : "װאָס אָנצוטאָן");
 }
 
 // The day array spans backcast and forecast, so "today" sits in the middle of
