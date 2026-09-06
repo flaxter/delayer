@@ -638,10 +638,18 @@ function stamp(dateISO, when, live, sel) {
   document.getElementById("today").innerHTML =
     `<span class="dow">${day.toLocaleDateString("en-GB", { weekday: "long" })}</span> ` +
     `<span class="dat">${day.getDate()} ${day.toLocaleDateString("en-GB", { month: "short" })}</span>`;
-  const time = new Date(when).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit" });
+  // 24-hour throughout, to match the period labels, the chart axis and sunrise.
+  // "11:59" alone is ambiguous about which day, so the day is always named.
+  const got = new Date(when);
+  const time = got.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+  const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
+  const daysAgo = Math.floor((midnight - new Date(got).setHours(0, 0, 0, 0)) / 86400e3);
+  const gotWhen = daysAgo <= 0 ? `today at ${time}`
+    : daysAgo === 1 ? `yesterday at ${time}`
+    : `on ${got.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} at ${time}`;
   const rel = sel === 0 ? "Today" : sel === 1 ? "Tomorrow" : `In ${sel} days`;
   document.getElementById("stamp").innerHTML =
-    `${rel} &middot; forecast retrieved ${time}${live ? "" : " &middot; cached, refreshing&hellip;"}`;
+    `${rel} &middot; forecast retrieved ${gotWhen}${live ? "" : " &middot; refreshing&hellip;"}`;
   document.getElementById("wearhead").textContent = sel === 0 ? "What to wear today" : "What to wear";
 }
 
