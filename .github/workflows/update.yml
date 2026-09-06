@@ -1,10 +1,14 @@
 name: Update forecast
 
-# Four times a day, spread across the ICON model runs (which land roughly every
-# three hours). Times are UTC; Kaiserslautern is UTC+2 in summer, UTC+1 in winter.
+# Once a day, shortly before the 06:30 the site is built for. The page fetches
+# Open-Meteo live in the browser on every load, so this snapshot only supplies
+# the instant first paint and the offline fallback — it does not need to be
+# fresh to the hour. 03:20 UTC is 05:20 in Kaiserslautern in summer, 04:20 in
+# winter. GitHub runs scheduled jobs on a best-effort basis and may delay them
+# under load, which is fine here.
 on:
   schedule:
-    - cron: "20 3,9,15,21 * * *"
+    - cron: "20 3 * * *"
   workflow_dispatch:
 
 permissions:

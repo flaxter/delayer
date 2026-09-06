@@ -1,9 +1,8 @@
-# Kaiserslautern weather
+# Delayer
 
-Answers the only two questions that matter at 6:30am: **how many layers**, and
-**do I need a raincoat or umbrella**.
+How many layers, and do I need a raincoat? Kaiserslautern, every morning.
 
-Live at <https://flaxter.github.io/kl-weather/>.
+Live at <https://flaxter.github.io/delayer/>.
 
 The day is split into four periods — 07:00–12:00, 12:00–16:00, 16:00–20:00, and
 20:00–07:00 overnight — each judged on its own hours. Arrows at the top step
@@ -43,12 +42,14 @@ there is no network.
 
 ## Automation
 
-`.github/workflows/update.yml` refreshes that snapshot **four times a day**
-(03:20, 09:20, 15:20, 21:20 UTC) and commits it only when it changed. Each run
-retries three times before giving up and leaving the previous snapshot in place.
-Every push to `main` redeploys via `.github/workflows/pages.yml`.
+`.github/workflows/update.yml` refreshes that snapshot **once a day** (03:20
+UTC) and commits it only when it changed. Each run retries three times before
+giving up and leaving the previous snapshot in place. Every push to `main`
+redeploys via `.github/workflows/pages.yml`.
 
-No server is involved — the schedule runs on GitHub's own runners.
+No server is involved: the schedule runs on GitHub's own ephemeral runners. The
+snapshot does not need to be fresh to the hour, because the browser fetches the
+live forecast on every load anyway.
 
 ## Local
 

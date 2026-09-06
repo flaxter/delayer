@@ -1,6 +1,6 @@
 {
-  "name": "Kaiserslautern Weather",
-  "short_name": "KL Weather",
+  "name": "Delayer",
+  "short_name": "Delayer",
   "description": "How many layers, and do I need a raincoat?",
   "start_url": ".",
   "display": "standalone",
