@@ -25,7 +25,7 @@ FORECAST = (
     "&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max,"
     "apparent_temperature_min,apparent_temperature_max,precipitation_sum,"
     "precipitation_probability_max,weather_code"
-    "&models=icon_seamless&timezone=Europe%2FBerlin&forecast_days=9"
+    "&models=icon_seamless&timezone=Europe%2FBerlin&past_days=5&forecast_days=9"
 )
 ALERTS = f"https://api.brightsky.dev/alerts?lat={LAT}&lon={LON}"
 

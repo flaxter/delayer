@@ -136,6 +136,19 @@
     letter-spacing: .01em;
   }
   .stamp b { color: var(--ink); font-weight: 500; }
+  .trend {
+    font-family: var(--display);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: -0.01em;
+    margin-top: 2px;
+  }
+  .trend:empty { display: none; }
+  .trend.warmer { color: var(--accent); }
+  .trend.colder { color: var(--rain); }
+  .trend.same   { color: var(--muted); }
+  .day.been .dow { opacity: .75; }
+  .day.been { color: var(--muted); }
 
   /* ---- the four periods ---- */
   .answers {
@@ -337,6 +350,7 @@
       <button class="step" id="next" type="button" aria-label="Next day">&rarr;</button>
     </div>
     <div class="stamp" id="stamp">&nbsp;</div>
+    <div class="trend" id="trend"></div>
   </div>
 
   <section class="sec">
@@ -491,6 +505,23 @@ function line(s) {
   return { call, detail: `${r0(s.appMin)}-${r0(s.appMax)}&deg;C &middot; ${s.pmax}% rain, ${fmt1(s.mm)} mm${bring}` };
 }
 
+// Peak daylight feels-like against the day before — the comparison people
+// actually make when they open the curtains.
+function renderTrend(today, before, offset) {
+  const el = document.getElementById("trend");
+  if (!today || !before) { el.textContent = ""; el.className = "trend"; return; }
+  const d = today.appMax - before.appMax;
+  const ref = offset === 0 ? "yesterday" : "the day before";
+  const mag = Math.abs(d);
+  if (mag < 1.5) {
+    el.className = "trend same";
+    el.innerHTML = `About the same as ${ref}`;
+    return;
+  }
+  el.className = "trend " + (d > 0 ? "warmer" : "colder");
+  el.innerHTML = `${r0(mag)}&deg; ${d > 0 ? "warmer" : "colder"} than ${ref}`;
+}
+
 function renderAnswers(hours, date, isToday) {
   const now = isToday ? new Date() : new Date(0);
   const base = new Date(date + "T00:00:00").getTime();
@@ -618,14 +649,16 @@ function renderFacts(day, a) {
 }
 
 // Daylight hours only — a wet night should not make a dry day read as "raincoat".
-function renderDays(days, hours, sel) {
-  const list = days.slice(0, lastUsableDay(hours, days) + 1);
-  document.getElementById("days").innerHTML = list.map((d, i) => {
+function renderDays(days, hours, sel, t0) {
+  const first = 0;
+  const list = days.slice(first, lastUsableDay(hours, days, t0) + 1);
+  document.getElementById("days").innerHTML = list.map((d, k) => {
+    const i = first + k;
     const a = summarize(slice(hours, d.date, 7, 20)) || summarize(d.hours);
     if (!a) return "";
     const dt = new Date(d.date + "T12:00:00");
-    return `<div class="day${i === sel ? " sel" : ""}" data-i="${i}" role="button" tabindex="0">
-      <span class="dow">${i === 0 ? "Today" : DOW[dt.getDay()] + " " + dt.getDate() + "."}</span>
+    return `<div class="day${i === sel ? " sel" : ""}${i < t0 ? " been" : ""}" data-i="${i}" role="button" tabindex="0">
+      <span class="dow">${i === t0 ? "Today" : DOW[dt.getDay()] + " " + dt.getDate() + "."}</span>
       <span class="verdict">${a.layer.n === 0 ? "T-shirt" : a.layer.n + " &rarr; " + a.layer.kit}</span>
       <span class="layers">${a.rain.word === "Dry" ? "dry" : a.pmax + "% " + a.rain.word.toLowerCase()}</span>
       <span class="range"><span class="lo">${r0(a.appMin)}&deg;</span> &rarr; <span class="hi">${r0(a.appMax)}&deg;</span></span>
@@ -647,40 +680,61 @@ function stamp(dateISO, when, live, sel) {
   const gotWhen = daysAgo <= 0 ? `today at ${time}`
     : daysAgo === 1 ? `yesterday at ${time}`
     : `on ${got.toLocaleDateString("en-GB", { day: "numeric", month: "short" })} at ${time}`;
-  const rel = sel === 0 ? "Today" : sel === 1 ? "Tomorrow" : `In ${sel} days`;
+  const rel = dayLabel(sel);
   document.getElementById("stamp").innerHTML =
     `${rel} &middot; forecast retrieved ${gotWhen}${live ? "" : " &middot; refreshing&hellip;"}`;
-  document.getElementById("wearhead").textContent = sel === 0 ? "What to wear today" : "What to wear";
+  document.getElementById("wearhead").textContent =
+    sel === 0 ? "What to wear today" : sel < 0 ? "What you needed" : "What to wear";
 }
 
-// Which day is on screen: 0 is today, up to a week out — or as far as the model
-// actually reaches, which for the ICON blend is a little over seven days.
+// The day array spans backcast and forecast, so "today" sits in the middle of
+// it. VIEW.sel is an absolute index; everything user-facing is expressed as an
+// offset from today.
 const HORIZON = 7;
 
-function lastUsableDay(hours, days) {
-  let last = 0;
-  for (let i = 0; i <= Math.min(HORIZON, days.length - 1); i++) {
+function todayIndex(days) {
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const i = days.findIndex(d => d.date === iso);
+  return i < 0 ? 0 : i;
+}
+
+function lastUsableDay(hours, days, from) {
+  let last = from;
+  for (let i = from; i <= Math.min(from + HORIZON, days.length - 1); i++) {
     if (slice(hours, days[i].date, 7, 20).length) last = i;
   }
   return last;
 }
-let VIEW = { data: null, when: null, live: false, sel: 0 };
+
+function dayLabel(offset) {
+  if (offset === 0) return "Today";
+  if (offset === 1) return "Tomorrow";
+  if (offset === -1) return "Yesterday";
+  return offset > 0 ? `In ${offset} days` : `${-offset} days ago`;
+}
+let VIEW = { data: null, when: null, live: false, sel: null };
 
 function paint(data, when, live, alerts) {
   if (data) VIEW.data = data;
   if (when) { VIEW.when = when; VIEW.live = live; }
   if (!VIEW.data) return;
   const { hours, days } = shape(VIEW.data);
-  const last = lastUsableDay(hours, days);
+  const t0 = todayIndex(days);
+  const last = lastUsableDay(hours, days, t0);
+  if (VIEW.sel === null) VIEW.sel = t0;
   VIEW.sel = Math.max(0, Math.min(VIEW.sel, last));
   const day = days[VIEW.sel];
+  const isToday = VIEW.sel === t0;
   const daylight = summarize(slice(hours, day.date, 7, 20)) || summarize(day.hours);
+  const before = VIEW.sel > 0 ? summarize(slice(hours, days[VIEW.sel - 1].date, 7, 20)) : null;
 
-  stamp(day.date, VIEW.when, VIEW.live, VIEW.sel);
-  renderAnswers(hours, day.date, VIEW.sel === 0);
-  renderChart(day, VIEW.sel === 0);
+  stamp(day.date, VIEW.when, VIEW.live, VIEW.sel - t0);
+  renderTrend(daylight, before, VIEW.sel - t0);
+  renderAnswers(hours, day.date, isToday);
+  renderChart(day, isToday);
   renderFacts(day, daylight);
-  renderDays(days, hours, VIEW.sel);
+  renderDays(days, hours, VIEW.sel, t0);
 
   document.getElementById("prev").disabled = VIEW.sel === 0;
   document.getElementById("next").disabled = VIEW.sel >= last;
@@ -706,7 +760,7 @@ async function boot() {
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LON +
   "&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m" +
   "&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max,apparent_temperature_min,apparent_temperature_max,precipitation_sum,precipitation_probability_max,weather_code" +
-  "&models=icon_seamless&timezone=Europe%2FBerlin&forecast_days=9";
+  "&models=icon_seamless&timezone=Europe%2FBerlin&past_days=5&forecast_days=9";
 const ALERT_URL = "https://api.brightsky.dev/alerts?lat=" + LAT + "&lon=" + LON;
 
 async function refresh() {
