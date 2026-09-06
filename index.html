@@ -566,7 +566,8 @@ function renderTrend(today, before, offset) {
   const el = document.getElementById("trend");
   if (!today || !before) { el.textContent = ""; el.className = "trend"; return; }
   const d = today.appMax - before.appMax;
-  const ref = offset === 0 ? "װי נעכטן" : "װי דעם טאָג פֿריִער";
+  // The day being compared against is the one before the one on screen.
+  const ref = offset === 0 ? "װי נעכטן" : offset === 1 ? "װי הײַנט" : "װי דעם טאָג פֿריִער";
   const mag = Math.abs(d);
   if (mag < 1.5) {
     el.className = "trend same";
