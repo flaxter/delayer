@@ -405,8 +405,8 @@ const tok = n => CSS.getPropertyValue(n).trim();
 function layerCall(morningApp) {
   const t = morningApp;
   if (t >= 23) return { n: 0, kit: "t-shirt" };
-  if (t >= 15) return { n: 1, kit: "sweatshirt or jacket" };
-  if (t >= 7)  return { n: 2, kit: "sweatshirt + jacket" };
+  if (t >= 15) return { n: 1, kit: "sweater" };
+  if (t >= 7)  return { n: 2, kit: "sweater + jacket" };
   if (t >= 0)  return { n: 3, kit: "warm coat" };
   return         { n: 3, kit: "warm coat, hat and gloves" };
 }

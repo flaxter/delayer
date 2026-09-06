@@ -16,8 +16,8 @@ taken as the coldest hour in the period:
 | feels like | verdict |
 |---|---|
 | ≥ 23 °C | t-shirt |
-| 15–23 °C | 1 layer → sweatshirt or jacket |
-| 7–15 °C | 2 layers → sweatshirt + jacket |
+| 15–23 °C | 1 layer → sweater |
+| 7–15 °C | 2 layers → sweater + jacket |
 | 0–7 °C | 3 layers → warm coat |
 | < 0 °C | 3 layers → warm coat, hat and gloves |
 
