@@ -3,6 +3,11 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [main]
+  # A push made with GITHUB_TOKEN does not trigger other workflows, so the
+  # nightly forecast commit would never reach the live site on its own.
+  workflow_run:
+    workflows: ["Update forecast"]
+    types: [completed]
   workflow_dispatch:
 
 permissions:
