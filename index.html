@@ -111,7 +111,8 @@
     margin: 0;
     text-wrap: balance;
   }
-  .datenav { display: flex; align-items: center; gap: 12px; }
+  .datenav { display: flex; align-items: center; gap: 12px; direction: ltr; }
+  .datenav .today { direction: rtl; }
   .step {
     flex: none;
     width: 34px; height: 34px;
@@ -355,9 +356,9 @@
   <div class="masthead">
     <p class="place">קײַזערסלאַוטערן</p>
     <div class="datenav">
-      <button class="step" id="prev" type="button" aria-label="דער פֿריִערדיקער טאָג">&rarr;</button>
+      <button class="step" id="prev" type="button" aria-label="דער פֿריִערדיקער טאָג">&larr;</button>
       <h1 class="today" id="today">&nbsp;</h1>
-      <button class="step" id="next" type="button" aria-label="דער קומעדיקער טאָג">&larr;</button>
+      <button class="step" id="next" type="button" aria-label="דער קומעדיקער טאָג">&rarr;</button>
     </div>
     <div class="stamp" id="stamp">&nbsp;</div>
     <div class="trend" id="trend"></div>
@@ -865,9 +866,9 @@ document.getElementById("days").addEventListener("keydown", e => {
 });
 document.addEventListener("keydown", e => {
   if (e.target.matches("input, textarea")) return;
-  // In an RTL page the earlier day sits to the right.
-  if (e.key === "ArrowRight" && VIEW.sel > 0) go(VIEW.sel - 1);
-  if (e.key === "ArrowLeft") go(VIEW.sel + 1);
+  // Arrow keys follow the buttons: left goes back a day, right goes forward.
+  if (e.key === "ArrowLeft" && VIEW.sel > 0) go(VIEW.sel - 1);
+  if (e.key === "ArrowRight") go(VIEW.sel + 1);
 });
 document.getElementById("refresh").addEventListener("click", refresh);
 boot();
