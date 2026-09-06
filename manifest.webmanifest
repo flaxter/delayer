@@ -1,8 +1,10 @@
 {
   "name": "Delayer",
   "short_name": "Delayer",
-  "description": "How many layers, and do I need a raincoat?",
+  "description": "װיפֿל שיכטן, און דאַרף מען אַ רעגן־מאַנטל?",
   "start_url": ".",
+  "lang": "yi",
+  "dir": "rtl",
   "display": "standalone",
   "background_color": "#F1F2EE",
   "theme_color": "#F1F2EE",

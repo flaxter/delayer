@@ -15,11 +15,21 @@ taken as the coldest hour in the period:
 
 | feels like | verdict |
 |---|---|
-| ≥ 23 °C | t-shirt |
-| 15–23 °C | 1 layer → sweater |
-| 7–15 °C | 2 layers → sweater + jacket |
-| 0–7 °C | 3 layers → warm coat |
-| < 0 °C | 3 layers → warm coat, hat and gloves |
+| ≥ 23 °C | טי־שערט (t-shirt) |
+| 15–23 °C | 1 שיכט → סװעטער (sweater) |
+| 7–15 °C | 2 שיכטן → סװעטער + רעקל (sweater + jacket) |
+| 0–7 °C | 3 שיכטן → װאַרעמער מאַנטל (warm coat) |
+| < 0 °C | 3 שיכטן → װאַרעמער מאַנטל, הוט און הענטשקעס |
+
+When the verdict is rain, the outermost layer becomes the waterproof one
+(רעגן־מאַנטל).
+
+## Language
+
+The interface is in Yiddish (klal Yiddish, YIVO orthography), right-to-left.
+Latin numerals, clock times and units are wrapped in `.num` spans with
+`unicode-bidi: isolate` so they keep their own run inside Yiddish text. The
+hour-by-hour plot stays left-to-right, being a numeric time axis.
 
 Rain uses peak probability, accumulated millimetres and gusts across the period:
 ≥ 1 mm or ≥ 60 % says raincoat, ≥ 0.2 mm or ≥ 30 % says umbrella, otherwise
