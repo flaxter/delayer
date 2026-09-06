@@ -396,9 +396,10 @@
   </section>
 
   <footer class="src">
-    Forecast: DWD ICON-D2 / ICON-EU via <a href="https://open-meteo.com/">Open-Meteo</a>, seamless blend.
-    Warnings: official DWD warnings for the Kaiserslautern-Stadt warn cell (707312001) via <a href="https://brightsky.dev/">Bright Sky</a>.
-    Layer and umbrella calls are computed from apparent temperature, hourly rain probability, accumulated millimetres and gusts &mdash; the reasoning is printed above so you can overrule it.
+    פּראָגנאָז: DWD ICON-D2 / ICON-EU דורך <a href="https://open-meteo.com/">Open-Meteo</a>.
+    דער מאָדעל לױפֿט יעדע דרײַ שעה; דער בלאַט ציט די פֿרישסטע דאַטן יעדעס מאָל װאָס מען עפֿנט אים.
+    װאָרענונגען: אַמטלעכע DWD־װאָרענונגען פֿאַר קײַזערסלאַוטערן־שטאָט (<span class="num">707312001</span>) דורך <a href="https://brightsky.dev/">Bright Sky</a>.
+    די שיכטן־ און שירעם־עצות װערן אױסגערעכנט פֿון דער געפֿילטער טעמפּעראַטור, דעם שעהלעכן שאַנס אױף רעגן, די מיליִמעטערס און די װינטן &mdash; דער חשבון שטײט אױבן, איר קענט אים איבערפּסקענען.
   </footer>
 </div>
 
@@ -751,12 +752,16 @@ function stamp(dateISO, when, live, sel) {
   const time = `<span class="num">${got.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>`;
   const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
   const daysAgo = Math.floor((midnight - new Date(got).setHours(0, 0, 0, 0)) / 86400e3);
-  const gotWhen = daysAgo <= 0 ? `הײַנט ${time}`
+  // Live means the browser just asked Open-Meteo, so a clock reading here would
+  // only ever say "now" — it would look like data age while measuring nothing.
+  // A time is shown only for the committed snapshot, where it is a real pull.
+  const gotWhen = live ? "אָקערשט"
+    : daysAgo <= 0 ? `הײַנט ${time}`
     : daysAgo === 1 ? `נעכטן ${time}`
     : `דעם <span class="num">${got.getDate()}</span> ${MONTHS[got.getMonth()]} ${time}`;
   const rel = dayLabel(sel);
   document.getElementById("stamp").innerHTML =
-    `${rel} &middot; פּראָגנאָז באַקומען ${gotWhen}${live ? "" : " &middot; מע פֿרישט אױף&hellip;"}`;
+    `${rel} &middot; פּראָגנאָז געצױגן ${gotWhen}${live ? "" : " &middot; מע פֿרישט אױף&hellip;"}`;
   document.getElementById("wearhead").textContent =
     "👕 " + (sel === 0 ? "װאָס אָנצוטאָן הײַנט" : sel < 0 ? "װאָס מע האָט געדאַרפֿט" : "װאָס אָנצוטאָן");
 }
