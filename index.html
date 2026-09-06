@@ -590,6 +590,7 @@ function renderChart(allHours, day, isToday) {
   const ink = tok("--ink"), muted = tok("--muted"), hair = tok("--hair");
   const accent = tok("--accent"), rain = tok("--rain"), rainSoft = tok("--rain-soft");
   const hairStrong = tok("--hair-strong");
+  const nowMs = Date.now();
 
   let s = "";
 
@@ -632,7 +633,6 @@ function renderChart(allHours, day, isToday) {
 
   // Apparent temperature. What has already happened is drawn back in the
   // neutral; the forecast ahead of now carries the accent.
-  const nowMs = Date.now();
   const split = isToday ? hours.findIndex(h => new Date(h.t).getTime() >= nowMs) : 0;
   const pt = (h, i) => `${x(i).toFixed(1)},${y(h.app).toFixed(1)}`;
   if (split > 0) {
