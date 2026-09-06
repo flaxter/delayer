@@ -739,6 +739,37 @@ function renderDays(days, hours, sel, t0) {
   }).join("");
 }
 
+// The day array spans backcast and forecast, so "today" sits in the middle of
+// it. VIEW.sel is an absolute index; everything user-facing is expressed as an
+// offset from today.
+const HORIZON = 7;
+let VIEW = { data: null, sel: null };
+
+function todayIndex(days) {
+  const today = new Date();
+  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const i = days.findIndex(d => d.date === iso);
+  return i < 0 ? 0 : i;
+}
+
+// The ICON blend reaches a little over seven days; stop where the data does.
+function lastUsableDay(hours, days, from) {
+  let last = from;
+  for (let i = from; i <= Math.min(from + HORIZON, days.length - 1); i++) {
+    if (slice(hours, days[i].date, 7, 20).length) last = i;
+  }
+  return last;
+}
+
+function dayLabel(offset) {
+  if (offset === 0) return "הײַנט";
+  if (offset === 1) return "מאָרגן";
+  if (offset === -1) return "נעכטן";
+  return offset > 0
+    ? `אין <span class="num">${offset}</span> טעג אַרום`
+    : `מיט <span class="num">${-offset}</span> טעג צוריק`;
+}
+
 function stamp(dateISO, sel) {
   const day = new Date(dateISO + "T12:00:00");
   document.getElementById("today").innerHTML =
@@ -794,13 +825,17 @@ async function refresh() {
     ]);
     paint(f, al.alerts || []);
   } catch (e) {
-    // Nothing is cached, so say so plainly rather than showing stale numbers.
-    document.getElementById("stamp").innerHTML =
-      "קײן פֿאַרבינדונג &middot; מע קען ניט ציִען די פּראָגנאָז";
+    // Only a failed request is a connection problem; anything else is a fault in
+    // this page and must not be dressed up as one.
+    const offline = e instanceof TypeError || !navigator.onLine;
+    console.error("delayer:", e);
+    document.getElementById("stamp").innerHTML = offline
+      ? "קײן פֿאַרבינדונג &middot; מע קען ניט ציִען די פּראָגנאָז"
+      : "אַ טעות אין בלאַט &middot; " + e.message;
     document.getElementById("trend").textContent = "";
     if (!VIEW.data) document.getElementById("answers").innerHTML =
       `<div class="answer"><div class="when"><span class="name">🚫</span></div>` +
-      `<p class="call">קײן פֿאַרבינדונג</p>` +
+      `<p class="call">${offline ? "קײן פֿאַרבינדונג" : "אַ טעות"}</p>` +
       `<span class="detail">פּרוּװט נאָך אַ מאָל</span></div>`;
   }
   btn.textContent = "אױפֿפֿרישן";
