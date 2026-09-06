@@ -135,7 +135,6 @@
     color: var(--muted);
     letter-spacing: .01em;
   }
-  .stamp b { color: var(--ink); font-weight: 500; }
   .trend {
     font-family: var(--display);
     font-weight: 700;
@@ -405,7 +404,6 @@
 
 <script>
 const LAT = 49.4447, LON = 7.7689;
-const SNAPSHOT_URL = "data/forecast.json";
 
 const DOW = ["זונטיק","מאָנטיק","דינסטיק","מיטװאָך","דאָנערשטיק","פֿרײַטיק","שבת"];
 const DOW_SHORT = ["זונ׳","מאָנ׳","דינ׳","מיט׳","דאָנ׳","פֿרײַ׳","שבת"];
@@ -741,64 +739,18 @@ function renderDays(days, hours, sel, t0) {
   }).join("");
 }
 
-function stamp(dateISO, when, live, sel) {
+function stamp(dateISO, sel) {
   const day = new Date(dateISO + "T12:00:00");
   document.getElementById("today").innerHTML =
     `<span class="dow">${DOW[day.getDay()]}</span> ` +
     `<span class="dat"><span class="num">${day.getDate()}</span> ${MONTHS[day.getMonth()]}</span>`;
-  // 24-hour throughout, to match the period labels, the chart axis and sunrise.
-  // "11:59" alone is ambiguous about which day, so the day is always named.
-  const got = new Date(when);
-  const time = `<span class="num">${got.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false })}</span>`;
-  const midnight = new Date(); midnight.setHours(0, 0, 0, 0);
-  const daysAgo = Math.floor((midnight - new Date(got).setHours(0, 0, 0, 0)) / 86400e3);
-  // Live means the browser just asked Open-Meteo, so a clock reading here would
-  // only ever say "now" — it would look like data age while measuring nothing.
-  // A time is shown only for the committed snapshot, where it is a real pull.
-  const gotWhen = live ? "אָקערשט"
-    : daysAgo <= 0 ? `הײַנט ${time}`
-    : daysAgo === 1 ? `נעכטן ${time}`
-    : `דעם <span class="num">${got.getDate()}</span> ${MONTHS[got.getMonth()]} ${time}`;
-  const rel = dayLabel(sel);
-  document.getElementById("stamp").innerHTML =
-    `${rel} &middot; פּראָגנאָז געצױגן ${gotWhen}${live ? "" : " &middot; מע פֿרישט אױף&hellip;"}`;
-  document.getElementById("wearhead").textContent =
+  document.getElementById("stamp").innerHTML = `${dayLabel(sel)} &middot; פּראָגנאָז געצױגן אָקערשט`;
+  document.getElementById("wearhead").innerHTML =
     "👕 " + (sel === 0 ? "װאָס אָנצוטאָן הײַנט" : sel < 0 ? "װאָס מע האָט געדאַרפֿט" : "װאָס אָנצוטאָן");
 }
 
-// The day array spans backcast and forecast, so "today" sits in the middle of
-// it. VIEW.sel is an absolute index; everything user-facing is expressed as an
-// offset from today.
-const HORIZON = 7;
-
-function todayIndex(days) {
-  const today = new Date();
-  const iso = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
-  const i = days.findIndex(d => d.date === iso);
-  return i < 0 ? 0 : i;
-}
-
-function lastUsableDay(hours, days, from) {
-  let last = from;
-  for (let i = from; i <= Math.min(from + HORIZON, days.length - 1); i++) {
-    if (slice(hours, days[i].date, 7, 20).length) last = i;
-  }
-  return last;
-}
-
-function dayLabel(offset) {
-  if (offset === 0) return "הײַנט";
-  if (offset === 1) return "מאָרגן";
-  if (offset === -1) return "נעכטן";
-  return offset > 0
-    ? `אין <span class="num">${offset}</span> טעג אַרום`
-    : `מיט <span class="num">${-offset}</span> טעג צוריק`;
-}
-let VIEW = { data: null, when: null, live: false, sel: null };
-
-function paint(data, when, live, alerts) {
+function paint(data, alerts) {
   if (data) VIEW.data = data;
-  if (when) { VIEW.when = when; VIEW.live = live; }
   if (!VIEW.data) return;
   const { hours, days } = shape(VIEW.data);
   const t0 = todayIndex(days);
@@ -810,7 +762,7 @@ function paint(data, when, live, alerts) {
   const daylight = summarize(slice(hours, day.date, 7, 20)) || summarize(day.hours);
   const before = VIEW.sel > 0 ? summarize(slice(hours, days[VIEW.sel - 1].date, 7, 20)) : null;
 
-  stamp(day.date, VIEW.when, VIEW.live, VIEW.sel - t0);
+  stamp(day.date, VIEW.sel - t0);
   renderTrend(daylight, before, VIEW.sel - t0);
   renderAnswers(hours, day.date, isToday);
   renderChart(hours, day, isToday);
@@ -822,21 +774,9 @@ function paint(data, when, live, alerts) {
   if (alerts !== undefined) renderWarnings(alerts);
 }
 
-function go(i) { VIEW.sel = i; paint(null, null, VIEW.live); window.scrollTo({ top: 0, behavior: "smooth" }); }
+function go(i) { VIEW.sel = i; paint(); window.scrollTo({ top: 0, behavior: "smooth" }); }
 
-/* ---------- boot: committed snapshot first, then live ---------- */
-
-// The snapshot is refreshed four times a day by a GitHub Action, so the page
-// has something correct to paint before the live request comes back — and
-// something to fall back on when there is no network at all.
-async function boot() {
-  try {
-    const snap = await fetch(SNAPSHOT_URL, { cache: "no-cache" }).then(r => r.json());
-    if (!VIEW.data) paint(snap.forecast, snap.fetched, false, snap.alerts || []);
-  } catch (e) {
-    /* the live fetch below is the other chance */
-  }
-}
+/* ---------- boot ---------- */
 
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LON +
   "&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m" +
@@ -852,14 +792,20 @@ async function refresh() {
       fetch(FORECAST_URL).then(r => r.json()),
       fetch(ALERT_URL).then(r => r.json()).catch(() => ({ alerts: [] })),
     ]);
-    paint(f, new Date().toISOString(), true, al.alerts || []);
+    paint(f, al.alerts || []);
   } catch (e) {
+    // Nothing is cached, so say so plainly rather than showing stale numbers.
     document.getElementById("stamp").innerHTML =
-      (VIEW.data ? "אָפֿלײַן &middot; מע װײַזט די לעצטע געשפּײַכלערטע פּראָגנאָז"
-                 : "אָפֿלײַן &middot; קײן פּראָגנאָז ניטאָ");
+      "קײן פֿאַרבינדונג &middot; מע קען ניט ציִען די פּראָגנאָז";
+    document.getElementById("trend").textContent = "";
+    if (!VIEW.data) document.getElementById("answers").innerHTML =
+      `<div class="answer"><div class="when"><span class="name">🚫</span></div>` +
+      `<p class="call">קײן פֿאַרבינדונג</p>` +
+      `<span class="detail">פּרוּװט נאָך אַ מאָל</span></div>`;
   }
   btn.textContent = "אױפֿפֿרישן";
 }
+
 document.getElementById("prev").addEventListener("click", () => go(VIEW.sel - 1));
 document.getElementById("next").addEventListener("click", () => go(VIEW.sel + 1));
 document.getElementById("days").addEventListener("click", e => {
@@ -877,7 +823,6 @@ document.addEventListener("keydown", e => {
   if (e.key === "ArrowRight") go(VIEW.sel + 1);
 });
 document.getElementById("refresh").addEventListener("click", refresh);
-boot();
 refresh();
 // A forecast fetched at 6:30 is stale by lunchtime; pick up the new run on return.
 document.addEventListener("visibilitychange", () => { if (!document.hidden) refresh(); });

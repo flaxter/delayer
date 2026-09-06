@@ -1,12 +1,14 @@
 # Delayer
 
-How many layers, and do I need a raincoat? Kaiserslautern, every morning.
+װיפֿל שיכטן, און דאַרף מען אַ רעגן־מאַנטל? — how many layers, and do I need a
+raincoat? A one-page Kaiserslautern forecast in Yiddish that answers the two
+questions you actually have at 6:30am.
 
 Live at <https://flaxter.github.io/delayer/>.
 
-The day is split into four periods — 07:00–12:00, 12:00–16:00, 16:00–20:00, and
-20:00–07:00 overnight — each judged on its own hours. Arrows at the top step
-forward a week.
+The day is split into four periods — 07:00–12:00, 12:00–16:00, 16:00–20:00 and
+20:00–07:00 overnight — each judged on its own hours. Arrows step five days back
+and a week forward.
 
 ## How the calls are made
 
@@ -21,52 +23,42 @@ taken as the coldest hour in the period:
 | 0–7 °C | 3 שיכטן → װאַרעמער מאַנטל (warm coat) |
 | < 0 °C | 3 שיכטן → װאַרעמער מאַנטל, הוט און הענטשקעס |
 
-When the verdict is rain, the outermost layer becomes the waterproof one
-(רעגן־מאַנטל).
-
-Legs are called separately, from the period's *warmest* hour: הײזקעס (shorts)
-at 22 °C and above, otherwise הױזן (trousers). `SHORTS_ABOVE` in `index.html`.
-
-## Language
-
-The interface is in Yiddish (klal Yiddish, YIVO orthography), right-to-left.
-Latin numerals, clock times and units are wrapped in `.num` spans with
-`unicode-bidi: isolate` so they keep their own run inside Yiddish text. The
-hour-by-hour plot stays left-to-right, being a numeric time axis.
-
 Rain uses peak probability, accumulated millimetres and gusts across the period:
 ≥ 1 mm or ≥ 60 % says raincoat, ≥ 0.2 mm or ≥ 30 % says umbrella, otherwise
 nothing. Above 40 km/h gusts it says raincoat instead of umbrella, because an
-umbrella is useless at that point.
+umbrella is useless at that point. When the verdict is rain, the outermost layer
+becomes the waterproof one (רעגן־מאַנטל).
 
-Adjust the bands in `layerCall()` / `rainCall()` in `index.html`.
+Legs are called separately, from the period's *warmest* hour: הײזקעס (shorts) at
+22 °C and above, otherwise הױזן (trousers).
+
+Adjust the bands in `layerCall()`, `rainCall()` and `SHORTS_ABOVE` in
+`index.html`.
 
 ## Data
 
-- Forecast: DWD's ICON-D2 / ICON-EU via [Open-Meteo](https://open-meteo.com/),
-  seamless blend, hourly, nine days.
+- Forecast: DWD ICON-D2 / ICON-EU via [Open-Meteo](https://open-meteo.com/),
+  seamless blend, hourly, five days back and nine forward.
 - Warnings: official DWD warnings for the Kaiserslautern-Stadt warn cell
   (707312001) via [Bright Sky](https://brightsky.dev/).
 
-The browser fetches both live on every load, so the page is never staler than
-the moment you opened it. `data/forecast.json` is a committed snapshot, painted
-instantly on load before the live request returns, and used as the fallback when
-there is no network.
+Both are fetched **live in the browser** on every load, and again whenever you
+return to the tab. There is no build step, no stored data and no scheduled job:
+the page is a single HTML file, and what you see is never staler than the moment
+you opened it. If the fetch fails it says so rather than showing old numbers.
 
-## Automation
+## Language
 
-`.github/workflows/update.yml` refreshes that snapshot **once a day** (03:20
-UTC) and commits it only when it changed. Each run retries three times before
-giving up and leaving the previous snapshot in place. Every push to `main`
-redeploys via `.github/workflows/pages.yml`.
-
-No server is involved: the schedule runs on GitHub's own ephemeral runners. The
-snapshot does not need to be fresh to the hour, because the browser fetches the
-live forecast on every load anyway.
+Yiddish (klal Yiddish, YIVO orthography), right-to-left. Latin numerals, clock
+times and units are wrapped in `.num` spans with `unicode-bidi: isolate` so they
+keep their own run inside Yiddish text. The hour-by-hour plot and the day
+stepper stay left-to-right — the first is a numeric time axis, the second by
+preference.
 
 ## Local
 
 ```bash
-python3 scripts/update_forecast.py   # refresh data/forecast.json (stdlib only)
-python3 -m http.server 8000          # http://localhost:8000
+python3 -m http.server 8000   # http://localhost:8000
 ```
+
+Every push to `main` redeploys via `.github/workflows/pages.yml`.
