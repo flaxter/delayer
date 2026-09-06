@@ -429,7 +429,7 @@ function shape(data) {
     wind: h.wind_speed_10m[i] ?? 0,
     cloud: h.cloud_cover[i] ?? 0,
     code: h.weather_code[i],
-  }));
+  })).filter(x => x.app !== null && x.temp !== null);  // past the model horizon everything is null
   const days = d.time.map((date, i) => ({
     date,
     sunrise: d.sunrise[i],
@@ -497,7 +497,11 @@ function renderAnswers(hours, date, isToday) {
   document.getElementById("answers").innerHTML = PERIODS.map(pd => {
     const s = summarize(slice(hours, date, pd.from, pd.to));
     const l = line(s);
-    if (!l) return "";
+    if (!l) return `<div class="answer past">
+      <div class="when"><span class="name">${pd.name}</span><span class="span">${pd.label}</span></div>
+      <p class="call">Not forecast yet</p>
+      <span class="detail">beyond the model horizon</span>
+    </div>`;
     const startsAt = base + pd.from * 3600e3, endsAt = base + pd.to * 3600e3;
     const state = now >= endsAt ? " past" : (now >= startsAt ? " now" : "");
     return `<div class="answer${state}">
@@ -615,9 +619,10 @@ function renderFacts(day, a) {
 
 // Daylight hours only — a wet night should not make a dry day read as "raincoat".
 function renderDays(days, hours, sel) {
-  const list = days.slice(0, Math.min(HORIZON + 1, days.length - 1));
+  const list = days.slice(0, lastUsableDay(hours, days) + 1);
   document.getElementById("days").innerHTML = list.map((d, i) => {
     const a = summarize(slice(hours, d.date, 7, 20)) || summarize(d.hours);
+    if (!a) return "";
     const dt = new Date(d.date + "T12:00:00");
     return `<div class="day${i === sel ? " sel" : ""}" data-i="${i}" role="button" tabindex="0">
       <span class="dow">${i === 0 ? "Today" : DOW[dt.getDay()] + " " + dt.getDate() + "."}</span>
@@ -640,8 +645,17 @@ function stamp(dateISO, when, live, sel) {
   document.getElementById("wearhead").textContent = sel === 0 ? "What to wear today" : "What to wear";
 }
 
-// Which day is on screen: 0 is today, up to 7 (a week out).
+// Which day is on screen: 0 is today, up to a week out — or as far as the model
+// actually reaches, which for the ICON blend is a little over seven days.
 const HORIZON = 7;
+
+function lastUsableDay(hours, days) {
+  let last = 0;
+  for (let i = 0; i <= Math.min(HORIZON, days.length - 1); i++) {
+    if (slice(hours, days[i].date, 7, 20).length) last = i;
+  }
+  return last;
+}
 let VIEW = { data: null, when: null, live: false, sel: 0 };
 
 function paint(data, when, live, alerts) {
@@ -649,7 +663,8 @@ function paint(data, when, live, alerts) {
   if (when) { VIEW.when = when; VIEW.live = live; }
   if (!VIEW.data) return;
   const { hours, days } = shape(VIEW.data);
-  VIEW.sel = Math.max(0, Math.min(VIEW.sel, Math.min(HORIZON, days.length - 2)));
+  const last = lastUsableDay(hours, days);
+  VIEW.sel = Math.max(0, Math.min(VIEW.sel, last));
   const day = days[VIEW.sel];
   const daylight = summarize(slice(hours, day.date, 7, 20)) || summarize(day.hours);
 
@@ -659,7 +674,6 @@ function paint(data, when, live, alerts) {
   renderFacts(day, daylight);
   renderDays(days, hours, VIEW.sel);
 
-  const last = Math.min(HORIZON, days.length - 2);
   document.getElementById("prev").disabled = VIEW.sel === 0;
   document.getElementById("next").disabled = VIEW.sel >= last;
   if (alerts !== undefined) renderWarnings(alerts);
