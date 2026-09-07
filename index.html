@@ -214,7 +214,7 @@
   }
   .answer .call .kit { color: var(--accent); }
   /* Emoji ride at text size and keep their own direction run. */
-  .ico { unicode-bidi: isolate; font-size: .9em; }
+  .ico { unicode-bidi: isolate; font-size: .9em; margin-inline-end: .3em; }
   :root[dir="rtl"] .when .name { unicode-bidi: isolate-override; direction: rtl; }
   .answer .call .legs {
     color: var(--muted);
@@ -639,6 +639,9 @@ const KIT_ICON = {
 };
 const LEG_ICON = { shorts: "🩳", trousers: "👖" };
 const icon = s => `<span class="ico">${s}</span>`;
+// These strings start with an emoji and a space, which the glyph's advance
+// width swallows; give the icon its own box so the gap survives.
+const withIcon = s => s.replace(/^(\S+)\s/, '<span class="ico">$1</span>');
 
 // Legs get their own call, on the period's warmest hour: you pick trousers or
 // shorts once for the period, and the peak is what decides it.
@@ -665,15 +668,15 @@ function line(s) {
   if (!s) return null;
   const L = withRain(s.layer, s.rain), R = s.rain;
   const lk = legCall(s.appMax);
-  const legs = `<span class="legs">${LEG_ICON[lk]} ${T.legs[lk]}</span>`;
+  const legs = `<span class="legs">${icon(LEG_ICON[lk])}${T.legs[lk]}</span>`;
   const pic = icon(KIT_ICON[L.kit] || "👕");
   const words = T.kit[L.kit];
   const call = (L.n === 0
-    ? `<span class="kit">${pic} ${words}</span>`
-    : `${num(L.n)} ${T.layer(L.n)} ${T.arrow} <span class="kit">${pic} ${words}</span>`) + legs;
+    ? `<span class="kit">${pic}${words}</span>`
+    : `${num(L.n)} ${T.layer(L.n)} ${T.arrow} <span class="kit">${pic}${words}</span>`) + legs;
   // The raincoat is already named in the verdict; do not say it twice.
-  const bring = R.bring && R.word !== "raincoat" ? ` <span class="bring">${T.bring[R.bring]}</span>` : "";
-  return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; 🌧️ ${num(s.pmax + "%")} ${T.rainWord}, ${num(fmt1(s.mm) + " mm")}${bring}` };
+  const bring = R.bring && R.word !== "raincoat" ? ` <span class="bring">${withIcon(T.bring[R.bring])}</span>` : "";
+  return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; ${withIcon("🌧️ ")}${num(s.pmax + "%")} ${T.rainWord}, ${num(fmt1(s.mm) + " mm")}${bring}` };
 }
 
 // Peak daylight feels-like against the day before — the comparison people
@@ -687,11 +690,11 @@ function renderTrend(today, before, offset) {
   const mag = Math.abs(d);
   if (mag < 1.5) {
     el.className = "trend same";
-    el.innerHTML = T.sameTxt(ref);
+    el.innerHTML = withIcon(T.sameTxt(ref));
     return;
   }
   el.className = "trend " + (d > 0 ? "warmer" : "colder");
-  el.innerHTML = `${d > 0 ? "🔥" : "❄️"} ` + T.cmpTxt(num(r0(mag) + "&deg;"), d > 0 ? T.warmer : T.colder, ref);
+  el.innerHTML = icon(d > 0 ? "🔥" : "❄️") + T.cmpTxt(num(r0(mag) + "&deg;"), d > 0 ? T.warmer : T.colder, ref);
 }
 
 function renderAnswers(hours, date, isToday) {
@@ -701,14 +704,14 @@ function renderAnswers(hours, date, isToday) {
     const s = summarize(slice(hours, date, pd.from, pd.to));
     const l = line(s);
     if (!l) return `<div class="answer past">
-      <div class="when"><span class="name">${T.periods[i]}</span><span class="span">${num(pd.label)}</span></div>
+      <div class="when"><span class="name">${withIcon(T.periods[i])}</span><span class="span">${num(pd.label)}</span></div>
       <p class="call">${T.notForecast}</p>
       <span class="detail">${T.beyondHorizon}</span>
     </div>`;
     const startsAt = base + pd.from * 3600e3, endsAt = base + pd.to * 3600e3;
     const state = now >= endsAt ? " past" : (now >= startsAt ? " now" : "");
     return `<div class="answer${state}">
-      <div class="when"><span class="name">${T.periods[i]}</span><span class="span">${num(pd.label)}</span></div>
+      <div class="when"><span class="name">${withIcon(T.periods[i])}</span><span class="span">${num(pd.label)}</span></div>
       <p class="call">${l.call}</p>
       <span class="detail">${l.detail}</span>
     </div>`;
@@ -834,7 +837,7 @@ function renderFacts(day, a) {
     [T.facts.sunset,    num(set), "&nbsp;"],
   ];
   document.getElementById("facts").innerHTML = items.map(([k, v, sub]) =>
-    `<div class="fact"><dt>${k}</dt><dd>${v} <small>${sub}</small></dd></div>`).join("");
+    `<div class="fact"><dt>${withIcon(k)}</dt><dd>${v} <small>${sub}</small></dd></div>`).join("");
 }
 
 // Daylight hours only — a wet night should not make a dry day read as "raincoat".
@@ -849,8 +852,8 @@ function renderDays(days, hours, sel, t0) {
     const kit = withRain(a.layer, a.rain);
     return `<div class="day${i === sel ? " sel" : ""}${i < t0 ? " been" : ""}" data-i="${i}" role="button" tabindex="0">
       <span class="dow">${i === t0 ? T.today : DOW_SHORT[dt.getDay()] + " " + num(dt.getDate())}</span>
-      <span class="verdict">${(KIT_ICON[kit.kit] || "👕") + " " + T.kit[kit.kit]}</span>
-      <span class="layers">${a.rain.word === "dry" ? T.dry : "🌧️ " + num(a.pmax + "%")}</span>
+      <span class="verdict">${icon(KIT_ICON[kit.kit] || "👕") + T.kit[kit.kit]}</span>
+      <span class="layers">${a.rain.word === "dry" ? withIcon(T.dry) : withIcon("🌧️ ") + num(a.pmax + "%")}</span>
       <span class="range num"><span class="lo">${r0(a.appMin)}&deg;</span> ${T.arrow} <span class="hi">${r0(a.appMax)}&deg;</span></span>
     </div>`;
   }).join("");
@@ -892,7 +895,7 @@ function stamp(dateISO, sel) {
     `<span class="dat"><span class="num">${day.getDate()}</span> ${MONTHS[day.getMonth()]}</span>`;
   document.getElementById("stamp").innerHTML = `${dayLabel(sel)} &middot; ${T.pulled}`;
   document.getElementById("wearhead").innerHTML =
-    "👕 " + (sel === 0 ? T.wearToday : sel < 0 ? T.wearPast : T.wear);
+    withIcon("👕 " + (sel === 0 ? T.wearToday : sel < 0 ? T.wearPast : T.wear));
 }
 
 function paint(data, alerts) {
