@@ -671,7 +671,9 @@ function line(s) {
   const legs = `<span class="legs">${icon(LEG_ICON[lk])}${T.legs[lk]}</span>`;
   const pic = icon(KIT_ICON[L.kit] || "👕");
   const words = T.kit[L.kit];
-  const call = (L.n === 0
+  // One layer needs no counting — a sweater obviously goes over a shirt. From
+  // two up, the count is the point, so it leads.
+  const call = (L.n < 2
     ? `<span class="kit">${pic}${words}</span>`
     : `${num(L.n)} ${T.layer(L.n)} ${T.arrow} <span class="kit">${pic}${words}</span>`) + legs;
   // The raincoat is already named in the verdict; do not say it twice.
@@ -852,7 +854,7 @@ function renderDays(days, hours, sel, t0) {
     const kit = withRain(a.layer, a.rain);
     return `<div class="day${i === sel ? " sel" : ""}${i < t0 ? " been" : ""}" data-i="${i}" role="button" tabindex="0">
       <span class="dow">${i === t0 ? T.today : DOW_SHORT[dt.getDay()] + " " + num(dt.getDate())}</span>
-      <span class="verdict">${icon(KIT_ICON[kit.kit] || "👕") + T.kit[kit.kit]}</span>
+      <span class="verdict">${(kit.n < 2 ? "" : num(kit.n) + " " + T.arrow + " ") + icon(KIT_ICON[kit.kit] || "👕") + T.kit[kit.kit]}</span>
       <span class="layers">${a.rain.word === "dry" ? withIcon(T.dry) : withIcon("🌧️ ") + num(a.pmax + "%")}</span>
       <span class="range num"><span class="lo">${r0(a.appMin)}&deg;</span> ${T.arrow} <span class="hi">${r0(a.appMax)}&deg;</span></span>
     </div>`;
