@@ -556,7 +556,7 @@ function line(s) {
     : `${num(L.n)} ${L.n === 1 ? "שיכט" : "שיכטן"} &larr; <span class="kit">${pic} ${L.kit}</span>`) + legs;
   // The raincoat is already named in the verdict; do not say it twice.
   const bring = R.kit && R.word !== "רעגן־מאַנטל" ? ` <span class="bring">${R.kit}</span>` : "";
-  return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; 🌧️ ${num(s.pmax + "%")} רעגן, ${num(fmt1(s.mm) + " מ״מ")}${bring}` };
+  return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; 🌧️ ${num(s.pmax + "%")} רעגן, ${num(fmt1(s.mm) + " mm")}${bring}` };
 }
 
 // Peak daylight feels-like against the day before — the comparison people
@@ -711,8 +711,8 @@ function renderFacts(day, a) {
   const items = [
     ["🌡️ װי עס פֿילט זיך, 7 אַ זײגער", num(fmt1(a.appMin) + "&deg;"), `לופֿט ${num(fmt1(day.tMin) + "&deg;")} מינימום`],
     ["🌡️ װי עס פֿילט זיך, מאַקסימום", num(fmt1(a.appMax) + "&deg;"), `לופֿט ${num(fmt1(day.tMax) + "&deg;")}`],
-    ["🌧️ רעגן, בײַ טאָג", num(fmt1(a.mm) + "&nbsp;מ״מ"), `${num(a.pmax + "%")} מאַקס שאַנס`],
-    ["💨 שטאַרקע װינטן", num(r0(a.gust)), "קמ״ש מאַקסימום"],
+    ["🌧️ רעגן, בײַ טאָג", num(fmt1(a.mm) + "&nbsp;mm"), `${num(a.pmax + "%")} מאַקס שאַנס`],
+    ["💨 שטאַרקע װינטן", num(r0(a.gust)), `${num("km/hr")} מאַקסימום`],
     ["🌅 זונאױפֿגאַנג", num(rise), "&nbsp;"],
     ["🌇 זונונטערגאַנג", num(set), "&nbsp;"],
   ];

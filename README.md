@@ -51,7 +51,9 @@ you opened it. If the fetch fails it says so rather than showing old numbers.
 
 Yiddish (klal Yiddish, YIVO orthography), right-to-left. Latin numerals, clock
 times and units are wrapped in `.num` spans with `unicode-bidi: isolate` so they
-keep their own run inside Yiddish text. The hour-by-hour plot and the day
+keep their own run inside Yiddish text. Units are left in English (mm,
+km/hr) rather than the Hebrew-script contractions מ״מ and קמ״ש, which have to be
+decoded to be read. The hour-by-hour plot and the day
 stepper stay left-to-right — the first is a numeric time axis, the second by
 preference.
 
