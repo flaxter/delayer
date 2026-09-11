@@ -636,14 +636,14 @@ function slice(hours, date, from, to) {
 // Pictures alongside the words, for a reader who is still slow at them.
 const KIT_ICON = {
   tshirt: "👕", sweater: "🧶", sweaterJacket: "🧶🧥", coat: "🧥",
-  coatHatGloves: "🧥🧢🧤", raincoat: "🌧️🧥", tshirtRaincoat: "👕🌧️",
-  sweaterRaincoat: "🧶🌧️", waterproof: "🌧️🧥", waterproofHatGloves: "🌧️🧥🧤",
+  coatHatGloves: "🧥🧢🧣🧤", raincoat: "🌧️🧥", tshirtRaincoat: "👕🌧️",
+  sweaterRaincoat: "🧶🌧️", waterproof: "🌧️🧥", waterproofHatGloves: "🌧️🧥🧢🧣🧤",
 };
 const LEG_ICON = { shorts: "🩳", trousers: "👖" };
 // A few emoji are replaced by pictures (the yarn ball never read as a
 // sweater; the others are just nicer drawings).
-const ICON_IMG = { "🧶": "icons/hoodie.png", "🧥": "icons/coat.png", "🧢": "icons/hat.png", "☔": "icons/umbrella.svg" };
-const pics = s => s.replace(/🧶|🧥|🧢|☔/gu, m => `<img src="${ICON_IMG[m]}" alt="${m}">`);
+const ICON_IMG = { "🧶": "icons/hoodie.png", "🧥": "icons/coat.png", "🧢": "icons/hat.png", "☔": "icons/umbrella.svg", "🧣": "icons/scarf.svg" };
+const pics = s => s.replace(/🧶|🧥|🧢|☔|🧣/gu, m => `<img src="${ICON_IMG[m]}" alt="${m}">`);
 const icon = s => `<span class="ico">${pics(s)}</span>`;
 // These strings start with an emoji and a space, which the glyph's advance
 // width swallows; give the icon its own box so the gap survives.
