@@ -215,6 +215,8 @@
   .answer .call .kit { color: var(--accent); }
   /* Emoji ride at text size and keep their own direction run. */
   .ico { unicode-bidi: isolate; font-size: .9em; margin-inline-end: .3em; }
+  /* Some garments are pictures rather than emoji; size them like a glyph. */
+  .ico img { height: 1.15em; width: auto; vertical-align: -0.2em; }
   :root[dir="rtl"] .when .name { unicode-bidi: isolate-override; direction: rtl; }
   .answer .call .legs {
     color: var(--muted);
@@ -638,10 +640,14 @@ const KIT_ICON = {
   sweaterRaincoat: "🧶🌧️", waterproof: "🌧️🧥", waterproofHatGloves: "🌧️🧥🧤",
 };
 const LEG_ICON = { shorts: "🩳", trousers: "👖" };
-const icon = s => `<span class="ico">${s}</span>`;
+// A few emoji are replaced by pictures (the yarn ball never read as a
+// sweater; the others are just nicer drawings).
+const ICON_IMG = { "🧶": "icons/hoodie.png", "🧥": "icons/coat.png", "🧢": "icons/hat.png", "☔": "icons/umbrella.svg" };
+const pics = s => s.replace(/🧶|🧥|🧢|☔/gu, m => `<img src="${ICON_IMG[m]}" alt="${m}">`);
+const icon = s => `<span class="ico">${pics(s)}</span>`;
 // These strings start with an emoji and a space, which the glyph's advance
 // width swallows; give the icon its own box so the gap survives.
-const withIcon = s => s.replace(/^(\S+)\s/, '<span class="ico">$1</span>');
+const withIcon = s => s.replace(/^(\S+)\s/, (_, g) => `<span class="ico">${pics(g)}</span>`);
 
 // Legs get their own call, on the period's warmest hour: you pick trousers or
 // shorts once for the period, and the peak is what decides it.
