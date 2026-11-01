@@ -236,6 +236,12 @@
     font-variant-numeric: tabular-nums;
   }
   .answer .detail .bring { color: var(--rain); }
+  /* The chance of precipitation: a drop that is grey while it is a rumour and
+     blue once it is worth acting on. */
+  .chance { white-space: nowrap; }
+  .chance.wet { color: var(--rain); }
+  .drop { width: .85em; height: .85em; vertical-align: -.08em; margin-inline-end: .15em; }
+  .dry { color: var(--muted); }
 
   /* ---- DWD warnings ---- */
   .warnings { display: flex; flex-direction: column; gap: 8px; }
@@ -399,7 +405,7 @@
       <h3 id="charthead"></h3>
       <span class="note" id="chartnote"></span>
     </header>
-    <div class="chartbox"><svg class="chart" id="chart" viewBox="0 0 640 226" role="img" aria-label="װי עס פֿילט זיך און דער שאַנס אױף רעגן, שעה נאָך שעה"></svg></div>
+    <div class="chartbox"><svg class="chart" id="chart" viewBox="0 0 640 246" role="img" aria-label="װי עס פֿילט זיך און דער שאַנס אױף רעגן, שעה נאָך שעה"></svg></div>
   </section>
 
   <section class="sec">
@@ -460,7 +466,13 @@ const STR = {
       raincoat: "🌧️ נעמט אַ רעגן־מאַנטל.",
       raincoatWindy: "💨 נעמט אַ רעגן־מאַנטל — צו װינטיק פֿאַר אַ שירעם.",
     },
-    rainWord: "רעגן", dry: "☀️ טרוקן",
+    rainWord: "רעגן", snowWord: "שנײ", sleetWord: "שלאַקסרעגן", dryWord: "טרוקן",
+    snowBring: {
+      umbrella: "🌨️ אפֿשר אַ ביסל שנײ.",
+      raincoat: "🌨️ עס װעט שנײען.",
+      raincoatWindy: "🌨️ עס װעט שנײען, מיט װינט.",
+    },
+    sleetBring: "🌨️ שלאַקסרעגן — שנײ מיט רעגן צוזאַמען.",
     warmer: "װאַרעמער", colder: "קעלטער",
     refYesterday: "נעכטן", refToday: "הײַנט", refDayBefore: "דעם טאָג פֿריִער",
     cmpTxt: (deg, word, ref) => `${deg} ${word} װי ${ref}`,
@@ -469,7 +481,7 @@ const STR = {
     noRain: "קײן רעגן ניט פֿאָרױסגעזאָגט 🌤️", now: "איצט",
     facts: {
       feels7: "🌡️ װי עס פֿילט זיך, 7 אַ זײגער", feelsPeak: "🌡️ װי עס פֿילט זיך, מאַקסימום",
-      rainDay: "🌧️ רעגן, בײַ טאָג", gusts: "💨 שטאַרקע װינטן",
+      rainDay: "🌧️ רעגן, בײַ טאָג", snowDay: "🌨️ שנײ, בײַ טאָג", gusts: "💨 שטאַרקע װינטן",
       sunrise: "🌅 זונאױפֿגאַנג", sunset: "🌇 זונונטערגאַנג",
       airLow: v => `לופֿט ${v} מינימום`, air: v => `לופֿט ${v}`,
       peakRisk: v => `${v} מאַקס שאַנס`, maxKmh: () => `${num("km/hr")} מאַקסימום`,
@@ -510,7 +522,13 @@ const STR = {
       raincoat: "🌧️ Bring a raincoat.",
       raincoatWindy: "💨 Bring a raincoat — too windy for an umbrella.",
     },
-    rainWord: "rain", dry: "☀️ dry",
+    rainWord: "rain", snowWord: "snow", sleetWord: "sleet", dryWord: "dry",
+    snowBring: {
+      umbrella: "🌨️ A little snow is possible.",
+      raincoat: "🌨️ It will snow.",
+      raincoatWindy: "🌨️ It will snow, with wind.",
+    },
+    sleetBring: "🌨️ Sleet — snow and rain together.",
     warmer: "warmer", colder: "colder",
     refYesterday: "yesterday", refToday: "today", refDayBefore: "the day before",
     cmpTxt: (deg, word, ref) => `${deg} ${word} than ${ref}`,
@@ -519,7 +537,7 @@ const STR = {
     noRain: "no rain forecast 🌤️", now: "now",
     facts: {
       feels7: "🌡️ Feels like, 7am", feelsPeak: "🌡️ Feels like, peak",
-      rainDay: "🌧️ Rain, daylight", gusts: "💨 Gusts",
+      rainDay: "🌧️ Rain, daylight", snowDay: "🌨️ Snow, daylight", gusts: "💨 Gusts",
       sunrise: "🌅 Sunrise", sunset: "🌇 Sunset",
       airLow: v => `air ${v} low`, air: v => `air ${v}`,
       peakRisk: v => `${v} peak risk`, maxKmh: () => `${num("km/hr")} max`,
@@ -576,12 +594,20 @@ function shape(data) {
     temp: h.temperature_2m[i],
     app: h.apparent_temperature[i],
     mm: h.precipitation[i] ?? 0,
+    rain: h.rain[i] ?? 0,
+    snow: h.snowfall[i] ?? 0,   // centimetres of snow, not millimetres of water
     prob: h.precipitation_probability[i] ?? 0,
     gust: h.wind_gusts_10m[i] ?? 0,
     wind: h.wind_speed_10m[i] ?? 0,
     cloud: h.cloud_cover[i] ?? 0,
     code: h.weather_code[i],
   })).filter(x => x.app !== null && x.temp !== null);  // past the model horizon everything is null
+  // Night is what the symbols need: a clear 02:00 is a moon, not a sun.
+  const sun = Object.fromEntries(d.time.map((date, i) => [date, [d.sunrise[i], d.sunset[i]]]));
+  for (const x of hours) {
+    const s = sun[x.day];
+    x.night = s ? (x.t < s[0].slice(0, 16) || x.t >= s[1].slice(0, 16)) : (x.hour < 7 || x.hour >= 19);
+  }
   const days = d.time.map((date, i) => ({
     date,
     sunrise: d.sunrise[i],
@@ -597,6 +623,77 @@ function shape(data) {
   return { hours, days };
 }
 
+/* ---------- what falls, and what the sky looks like ---------- */
+
+// WMO weather codes, as Open-Meteo reports them.
+const CODE = {
+  fog:     c => c === 45 || c === 48,
+  sleet:   c => c === 56 || c === 57 || c === 66 || c === 67,  // freezing drizzle / rain
+  snow:    c => (c >= 71 && c <= 77) || c === 85 || c === 86,
+  showers: c => c >= 80 && c <= 82,
+  thunder: c => c >= 95,
+};
+// Open-Meteo gives snowfall in centimetres; roughly seven of them weigh a
+// millimetre of rain, so the two can be compared on one scale.
+const snowWater = cm => cm / 7;
+
+// rain | snow | sleet | null, for a run of hours. The model splits
+// precipitation into rain and snow, so what falls is read from that; only when
+// nothing is accumulated but a chance remains does the weather code, and
+// finally the air temperature, decide. Apparent temperature is deliberately
+// not consulted: wind makes 3 °C feel like -2 °C, and it still rains.
+function precipKind(hs) {
+  const rain = hs.reduce((s, x) => s + x.rain, 0);
+  const snow = hs.reduce((s, x) => s + snowWater(x.snow), 0);
+  const pmax = Math.max(...hs.map(x => x.prob));
+  const mm = hs.reduce((s, x) => s + x.mm, 0);
+  if (mm < 0.05 && pmax < 5) return null;
+  if (rain + snow > 0) {
+    const share = Math.min(rain, snow) / (rain + snow);
+    if (share >= 0.25) return "sleet";
+    return snow > rain ? "snow" : "rain";
+  }
+  const codes = hs.map(x => x.code);
+  if (codes.some(CODE.snow)) return "snow";
+  if (codes.some(CODE.sleet)) return "sleet";
+  // Air temperature of the hours that might be wet, not the whole period.
+  const wet = hs.filter(x => x.prob >= 5);
+  const tWet = wet.length ? Math.max(...wet.map(x => x.temp)) : Math.max(...hs.map(x => x.temp));
+  if (tWet <= 0.5) return "snow";
+  if (tWet <= 2) return "sleet";
+  return "rain";
+}
+
+// One symbol per hour, Met Office style: what the sky is doing, not a fixed
+// raindrop. Precipitation shows only when the hour is actually wet.
+function hourSymbol(h) {
+  const c = h.code;
+  if (CODE.thunder(c)) return "⛈️";
+  const wet = h.mm >= 0.1 || (h.prob >= 30 && (h.rain > 0 || h.snow > 0 || c >= 50));
+  if (wet) {
+    if (CODE.snow(c) || snowWater(h.snow) > h.rain) return "🌨️";
+    if (CODE.sleet(c)) return "🌨️";
+    return CODE.showers(c) && !h.night ? "🌦️" : "🌧️";
+  }
+  if (CODE.fog(c)) return "🌫️";
+  if (h.night) return h.cloud < 50 ? "🌙" : "☁️";
+  if (h.cloud < 20) return "☀️";
+  if (h.cloud < 50) return "🌤️";
+  if (h.cloud < 80) return "⛅";
+  return "☁️";
+}
+
+// One symbol for a run of hours: precipitation if the verdict says so,
+// otherwise the sky at the typical hour.
+function periodSymbol(hs, kind, rain) {
+  if (hs.some(x => CODE.thunder(x.code))) return "⛈️";
+  if (kind && rain.word !== "dry") return kind === "rain" ? "🌧️" : "🌨️";
+  const night = hs.filter(x => x.night).length * 2 > hs.length;
+  if (hs.filter(x => CODE.fog(x.code)).length * 2 > hs.length) return "🌫️";
+  const cloud = hs.reduce((s, x) => s + x.cloud, 0) / hs.length;
+  return hourSymbol({ code: 0, mm: 0, prob: 0, rain: 0, snow: 0, night, cloud });
+}
+
 // Everything the verdicts need for an arbitrary run of hours.
 function summarize(hs) {
   if (!hs.length) return null;
@@ -604,11 +701,15 @@ function summarize(hs) {
   const appMax = Math.max(...hs.map(x => x.app));
   const pmax = Math.max(...hs.map(x => x.prob));
   const mm = hs.reduce((s, x) => s + x.mm, 0);
+  const snowCm = hs.reduce((s, x) => s + x.snow, 0);
   const gust = Math.max(...hs.map(x => x.gust));
+  const rain = rainCall(pmax, mm, gust);
+  const kind = precipKind(hs);
   return {
-    appMin, appMax, pmax, mm, gust,
+    appMin, appMax, pmax, mm, snowCm, gust, kind,
     layer: layerCall(appMin),
-    rain: rainCall(pmax, mm, gust),
+    rain,
+    symbol: periodSymbol(hs, kind, rain),
   };
 }
 
@@ -640,6 +741,21 @@ const KIT_ICON = {
   sweaterRaincoat: "🧶🌧️", waterproof: "🌧️🧥", waterproofHatGloves: "🌧️🧥🧢🧣🧤",
 };
 const LEG_ICON = { shorts: "🩳", trousers: "👖" };
+// The waterproof kits carry a raindrop; under snow it becomes a snow cloud.
+const kitIcon = (kit, kind) =>
+  (KIT_ICON[kit] || "👕").replace("🌧️", kind === "snow" || kind === "sleet" ? "🌨️" : "🌧️");
+const precipWord = kind => kind === "snow" ? T.snowWord : kind === "sleet" ? T.sleetWord : T.rainWord;
+
+// The chance of something falling, Met Office style: a drop with the
+// percentage, blue only once it is worth acting on, grey while it is a rumour,
+// and nothing at all under 5% — a raindrop beside "0%" tells a non-reader it
+// will rain.
+const DROP = `<svg class="drop" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5C12 2.5 5.5 10 5.5 15a6.5 6.5 0 0 0 13 0C18.5 10 12 2.5 12 2.5z" fill="currentColor"/></svg>`;
+function chance(s) {
+  if (s.pmax < 5 && s.mm < 0.05) return `<span class="dry">${T.dryWord}</span>`;
+  const wet = s.rain.word !== "dry";
+  return `<span class="chance${wet ? " wet" : ""}">${DROP}${num(s.pmax + "%")}</span>`;
+}
 // A few emoji are replaced by pictures (the yarn ball never read as a
 // sweater; the others are just nicer drawings).
 const ICON_IMG = { "🧶": "icons/hoodie.png", "🧥": "icons/coat.png", "🧢": "icons/hat.png", "☔": "icons/umbrella.svg", "🧣": "icons/scarf.svg" };
@@ -675,16 +791,22 @@ function line(s) {
   const L = withRain(s.layer, s.rain), R = s.rain;
   const lk = legCall(s.appMax);
   const legs = `<span class="legs">${icon(LEG_ICON[lk])}${T.legs[lk]}</span>`;
-  const pic = icon(KIT_ICON[L.kit] || "👕");
+  const pic = icon(kitIcon(L.kit, s.kind));
   const words = T.kit[L.kit];
   // One layer needs no counting — a sweater obviously goes over a shirt. From
   // two up, the count is the point, so it leads.
   const call = (L.n < 2
     ? `<span class="kit">${pic}${words}</span>`
     : `${num(L.n)} ${T.layer(L.n)} ${T.arrow} <span class="kit">${pic}${words}</span>`) + legs;
-  // The raincoat is already named in the verdict; do not say it twice.
-  const bring = R.bring && R.word !== "raincoat" ? ` <span class="bring">${withIcon(T.bring[R.bring])}</span>` : "";
-  return { call, detail: `${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; ${withIcon("🌧️ ")}${num(s.pmax + "%")} ${T.rainWord}, ${num(fmt1(s.mm) + " mm")}${bring}` };
+  // The raincoat is already named in the verdict; do not say it twice. Snow is
+  // worth a word of its own, since the coat alone does not say what is coming.
+  const snowy = s.kind === "snow" || s.kind === "sleet";
+  const bring = R.bring && (snowy || R.word !== "raincoat")
+    ? ` <span class="bring">${withIcon(s.kind === "sleet" ? T.sleetBring : (snowy ? T.snowBring : T.bring)[R.bring])}</span>` : "";
+  // Sky symbol, feels-like range, then the chance and amount of what falls.
+  const amount = s.kind === "snow" ? num(fmt1(s.snowCm) + " cm") : num(fmt1(s.mm) + " mm");
+  const falls = s.pmax < 5 && s.mm < 0.05 ? chance(s) : `${chance(s)} ${precipWord(s.kind)}, ${amount}`;
+  return { call, detail: `${icon(s.symbol)}${num(r0(s.appMin) + "-" + r0(s.appMax) + "&deg;C")} &middot; ${falls}${bring}` };
 }
 
 // Peak daylight feels-like against the day before — the comparison people
@@ -743,8 +865,10 @@ function renderChart(allHours, day, isToday) {
   const hours = slice(allHours, day.date, 5, 31);
   if (!hours.length) return;
 
-  const W = 640, H = 226;
-  const L = 34, R = 12, TOP = 16, tempH = 124, barsTop = 158, barsH = 44;
+  const W = 640, H = 246;
+  // A row of sky symbols sits between the temperature panel and the chance
+  // bars, every three hours, as the Met Office draws its hourly strip.
+  const L = 34, R = 12, TOP = 16, tempH = 124, symY = 160, barsTop = 178, barsH = 44;
   const innerW = W - L - R;
   const x = i => L + (innerW * i) / (hours.length - 1);
 
@@ -787,9 +911,22 @@ function renderChart(allHours, day, isToday) {
       if (h.prob < 5) return;
       const bh = (h.prob / 100) * barsH;
       const gone = new Date(h.t).getTime() < nowMs;
-      s += `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${(barsTop + barsH - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${gone ? muted : rain}" opacity="${gone ? 0.35 : 0.9}" rx="1"/>`;
+      // Snow hours are hollow bars: same colour, different fill, and the
+      // symbol above names it, so the difference never rests on colour alone.
+      const snowy = CODE.snow(h.code) || CODE.sleet(h.code) || (h.snow > 0 && snowWater(h.snow) >= h.rain);
+      const col = gone ? muted : rain;
+      s += snowy
+        ? `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${(barsTop + barsH - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${col}" fill-opacity="${gone ? 0.12 : 0.25}" stroke="${col}" stroke-width="1.25" opacity="${gone ? 0.5 : 1}" rx="1"/>`
+        : `<rect x="${(x(i) - bw / 2).toFixed(1)}" y="${(barsTop + barsH - bh).toFixed(1)}" width="${bw.toFixed(1)}" height="${bh.toFixed(1)}" fill="${col}" opacity="${gone ? 0.35 : 0.9}" rx="1"/>`;
     });
   }
+
+  // sky symbols, every three hours, on the same ticks as the hour axis
+  hours.forEach((h, i) => {
+    if (h.hour % 3 !== 0) return;
+    const gone = new Date(h.t).getTime() < nowMs;
+    s += `<text x="${x(i).toFixed(1)}" y="${symY}" text-anchor="middle" font-size="13" opacity="${gone ? 0.45 : 1}">${hourSymbol(h)}</text>`;
+  });
 
   // the out-of-the-house band, 7am to 7pm
   const iStart = hours.findIndex(h => h.hour === 7);
@@ -839,7 +976,9 @@ function renderFacts(day, a) {
   const items = [
     [T.facts.feels7,   num(fmt1(a.appMin) + "&deg;"), T.facts.airLow(num(fmt1(day.tMin) + "&deg;"))],
     [T.facts.feelsPeak, num(fmt1(a.appMax) + "&deg;"), T.facts.air(num(fmt1(day.tMax) + "&deg;"))],
-    [T.facts.rainDay,   num(fmt1(a.mm) + "&nbsp;mm"), T.facts.peakRisk(num(a.pmax + "%"))],
+    a.kind === "snow"
+      ? [T.facts.snowDay, num(fmt1(a.snowCm) + "&nbsp;cm"), T.facts.peakRisk(num(a.pmax + "%"))]
+      : [T.facts.rainDay, num(fmt1(a.mm) + "&nbsp;mm"), T.facts.peakRisk(num(a.pmax + "%"))],
     [T.facts.gusts,     num(r0(a.gust)), T.facts.maxKmh()],
     [T.facts.sunrise,   num(rise), "&nbsp;"],
     [T.facts.sunset,    num(set), "&nbsp;"],
@@ -860,8 +999,8 @@ function renderDays(days, hours, sel, t0) {
     const kit = withRain(a.layer, a.rain);
     return `<div class="day${i === sel ? " sel" : ""}${i < t0 ? " been" : ""}" data-i="${i}" role="button" tabindex="0">
       <span class="dow">${i === t0 ? T.today : DOW_SHORT[dt.getDay()] + " " + num(dt.getDate())}</span>
-      <span class="verdict">${(kit.n < 2 ? "" : num(kit.n) + " " + T.arrow + " ") + icon(KIT_ICON[kit.kit] || "👕") + T.kit[kit.kit]}</span>
-      <span class="layers">${a.rain.word === "dry" ? withIcon(T.dry) : withIcon("🌧️ ") + num(a.pmax + "%")}</span>
+      <span class="verdict">${(kit.n < 2 ? "" : num(kit.n) + " " + T.arrow + " ") + icon(kitIcon(kit.kit, a.kind)) + T.kit[kit.kit]}</span>
+      <span class="layers">${icon(a.symbol)}${chance(a)}</span>
       <span class="range num"><span class="lo">${r0(a.appMin)}&deg;</span> ${T.arrow} <span class="hi">${r0(a.appMax)}&deg;</span></span>
     </div>`;
   }).join("");
@@ -971,7 +1110,7 @@ chrome();
 /* ---------- boot ---------- */
 
 const FORECAST_URL = "https://api.open-meteo.com/v1/forecast?latitude=" + LAT + "&longitude=" + LON +
-  "&hourly=temperature_2m,apparent_temperature,precipitation,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m" +
+  "&hourly=temperature_2m,apparent_temperature,precipitation,rain,snowfall,precipitation_probability,weather_code,wind_speed_10m,wind_gusts_10m,cloud_cover,relative_humidity_2m" +
   "&daily=sunrise,sunset,temperature_2m_min,temperature_2m_max,apparent_temperature_min,apparent_temperature_max,precipitation_sum,precipitation_probability_max,weather_code" +
   "&models=icon_seamless&timezone=Europe%2FBerlin&past_days=5&forecast_days=9";
 const ALERT_URL = "https://api.brightsky.dev/alerts?lat=" + LAT + "&lon=" + LON;

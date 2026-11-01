@@ -32,8 +32,22 @@ becomes the waterproof one (רעגן־מאַנטל).
 Legs are called separately, from the period's *warmest* hour: הײזקעס (shorts) at
 22 °C and above, otherwise הױזן (trousers).
 
-Adjust the bands in `layerCall()`, `rainCall()` and `SHORTS_ABOVE` in
-`index.html`.
+What falls is read from the model's own split of precipitation into rain and
+snowfall, not guessed from the temperature: a windy 3 °C can feel like −2 °C and
+still rain. Only when nothing is accumulated but a chance remains does the WMO
+weather code decide, and after that the *air* temperature of the wet hours
+(≤ 0.5 °C snow, ≤ 2 °C sleet). Snow is reported in centimetres, and the
+waterproof-coat kits swap their raindrop for a snow cloud.
+
+Each period, each day in the week list and every third hour of the plot carries
+a sky symbol — sun, moon, cloud, fog, rain, snow, thunder — the way the Met
+Office draws its hourly strip. The chance of precipitation is a separate water
+drop with the percentage: grey while it is only a rumour, blue once the verdict
+is umbrella or raincoat, and absent under 5 %, so a dry period never shows a
+raindrop beside "0 %". In the plot, snow hours are drawn as hollow bars.
+
+Adjust the bands in `layerCall()`, `rainCall()`, `precipKind()` and
+`SHORTS_ABOVE` in `index.html`.
 
 ## Data
 
